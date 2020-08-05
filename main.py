@@ -181,7 +181,7 @@ if __name__ == '__main__':
                 a_bandera = False
             if evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
                 pygame.mixer.music.load("Sonidos/disparos.wav")
-                pygame.mixer.music.play(1,0.3)
+                pygame.mixer.music.play(1)
                 nave.disparar()
 
         if ultimo_enemigo + RESPAWN <= pygame.time.get_ticks():
