@@ -2,7 +2,6 @@ from random import randint
 
 import pygame
 
-
 ANCHO, ALTO = 800, 600
 RESOLUCION = (ANCHO, ALTO)
 RESPAWN = 3000
@@ -14,8 +13,6 @@ class Personaje:
         self.posicion.centerx = posx
         self.posicion.centery = posy
         self.velocidad = velocidad
-
-
 
     def dibujar(self, pantalla):
         pantalla.blit(self.imagen, self.posicion)
@@ -67,20 +64,23 @@ class Nave(Personaje):
         #pygame.mixer.Sound.play(self.sonido_disparo)
 
 
-
 class Enemigo(Personaje):
     def __init__(self, hardcore = False):
         if hardcore:
             imagen="Imagenes/skull.png"
+
         else:
             imagen="Imagenes/enemy.png"
 
-        super(Enemigo, self).__init__(imagen,posy=randint(0,int(ALTO/2)))
+        super(Enemigo, self).__init__(imagen,posy=randint(0,int(ALTO/2)),velocidad=1)
+        if hardcore:
+            self.velocidad=5
+
         self.destino = (randint(0+self.posicion.width, ANCHO-self.posicion.width), randint(0+self.posicion.height, ALTO-self.posicion.height))
         self.hardcore = hardcore
         self.esta_vivo = True
 
-    def movimiento(self):
+    def movimiento(self):#MOVIMIENTO ALEATORIO
         x = randint(0, 2000000)
         if 0 <= x < 500000:
             self.mover_arriba()
@@ -91,7 +91,7 @@ class Enemigo(Personaje):
         if 1500000 <= x < 2000000:
             self.mover_izquierda()
 
-    def movimiento_trayectoria(self):
+    def movimiento_trayectoria(self): # MOVIMIENTO CON DIRECCION EN UN PUNTO
         if self.posicion.centerx == self.destino[0] and self.posicion.centery == self.destino[1]:
             self.destino = (randint(0+int(self.posicion.width/2)+1, ANCHO-int(self.posicion.width/2)-1),
                             randint(0+int(self.posicion.height/2)+1, ALTO-int(self.posicion.height/2)-1))
@@ -134,61 +134,65 @@ class Disparo(Personaje):
 if __name__ == '__main__':
 
 
-    pygame.init()
+    pygame.init() # INICIALIZAR PYGAME
     pygame.font.init()  # you have to call this at the start,
     # if you want to use this module.
-    myfont = pygame.font.SysFont('Comic Sans MS', 30)
-    imagen = pygame.image.load("Imagenes/spaceship.png")
-    pantalla = pygame.display.set_mode(RESOLUCION)
-    corriendo = True
-    pygame.display.set_caption("Nuestro Juego")
-    pygame.display.set_icon(imagen)
-    nave = Nave()
-    lista_enemigos = [Enemigo() for _ in range(5)]
+    myfont = pygame.font.SysFont('Arial', 30)
+    imagen = pygame.image.load("Imagenes/spaceship.png")#CARGAR UNA IMAGEN
+    pantalla = pygame.display.set_mode(RESOLUCION)#INICIALIZAR PANTALLA
+    corriendo = True#ACA DECLARAMOS
+    pygame.display.set_caption("SORETITOS")#NOMBRE DEL JUEGO O VENTANA
+    pygame.display.set_icon(imagen)#ICONO DEL PROGRAMA ESCALADO A X RES (MAS CHICA)
+    nave = Nave()#CREAR UNA NAVE
+    lista_enemigos = [Enemigo() for _ in range(5)] #CREAR UNA LISTA DE ENEMIGOS
+    lista_enemigos = []
+    ultimo_score = 0
+    for _ in range(5):#CREAMOS UNA LISTA DE ENEMIGOS
+        lista_enemigos.append(Enemigo())#ACA LOS AGREGAMOS A LA LISTA
 
-
+    #TECLAS MOVIMIENTO POR DEFECTO VIENE EN FALSE
     w_bandera = False
     d_bandera = False
     s_bandera = False
     a_bandera = False
 
-    reloj = pygame.time.Clock()
-    ultimo_enemigo = pygame.time.get_ticks()
-    enemigos_muertos = []
-    score = 0
+    reloj = pygame.time.Clock()#INICIALIZAR RELOJ , LIMITAMOS LOS FPS
+    ultimo_enemigo = pygame.time.get_ticks()#DEVUELVE EL TIEMPO EN MS DESDE QUE SE EJECUTA EL PROGRAMA
+    enemigos_muertos = []#LISTA DE ENEMIGOS MUERTOS , INICIALIZA EN 0
+    score = 10# PUNTAJE ARRANCA EN 0
 
-    while corriendo:
-        for evento in pygame.event.get():
-            if evento.type == pygame.QUIT:
+    while corriendo:#BUCLE PRINCIPAL
+        for evento in pygame.event.get():#DEVUELVE EVENTO QUE REALIZA EL USUARIO W,A,S,D
+            if evento.type == pygame.QUIT:#CERRAR VENTANA CON LA CRUZ
                 corriendo = False
-            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
+            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:#CERRAMOS CON LA TECLA ESCAPE
                 corriendo = False
-            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_w:
+            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_w:#MOVEMOS CON LA W
                 w_bandera = True
-            if evento.type == pygame.KEYUP and evento.key == pygame.K_w:
+            if evento.type == pygame.KEYUP and evento.key == pygame.K_w:#CUANDO NO ESTAMOS APRETANDO
                 w_bandera = False
-            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_d:
+            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_d:#" D
                 d_bandera = True
-            if evento.type == pygame.KEYUP and evento.key == pygame.K_d:
+            if evento.type == pygame.KEYUP and evento.key == pygame.K_d:#" D
                 d_bandera = False
-            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_s:
+            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_s:# " S
                 s_bandera = True
-            if evento.type == pygame.KEYUP and evento.key == pygame.K_s:
+            if evento.type == pygame.KEYUP and evento.key == pygame.K_s:#...
                 s_bandera = False
             if evento.type == pygame.KEYDOWN and evento.key == pygame.K_a:
                 a_bandera = True
             if evento.type == pygame.KEYUP and evento.key == pygame.K_a:
                 a_bandera = False
-            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
-                pygame.mixer.music.load("Sonidos/disparos.wav")
+            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:#DISPARO CON SPACE
+                pygame.mixer.music.load("Sonidos/disparos.wav")#CARGAMOS EL SONIDO DE PEDO(LITERAL)
                 pygame.mixer.music.play(1)
-                nave.disparar()
+                nave.disparar()#LLAMAMOS AL METODO DISPARAR DE LA NAVE
 
-        if ultimo_enemigo + RESPAWN <= pygame.time.get_ticks():
+        if ultimo_enemigo + RESPAWN <= pygame.time.get_ticks():#RESPAWN DEL ULTIMO ENEMIGO
             ultimo_enemigo = pygame.time.get_ticks()
-            lista_enemigos.append(Enemigo(hardcore=True))
+            lista_enemigos.append(Enemigo(hardcore=True))#AGREGAMOS UN ENEMIGO NUEVO
 
-        if w_bandera:
+        if w_bandera:#MOVIMIENTO DE LA NAVE
             nave.mover_arriba()
         if d_bandera:
             nave.mover_derecha()
@@ -197,42 +201,46 @@ if __name__ == '__main__':
         if a_bandera:
             nave.mover_izquierda()
 
-        pantalla.fill((255, 255, 255))
-        textsurface = myfont.render(f'Score: {score}', False, (0, 0, 0))
-        pantalla.blit(textsurface,(0, 0))
-        if nave.detectar_colision(lista_enemigos)>=0:
-             corriendo= False
+        #DIBUJAR LOS OBJETOS EN LA PANTALLA
+        pantalla.fill((255, 255, 255))#PINTAR TODA LA PANTALLA DE COLOR R/ G/ B
+        textsurface = myfont.render(f"Score: {score}", False, (0, 0, 0))#AGREGAMOS SUPERFICIE DE TEXTO SCORE
+        pantalla.blit(textsurface,(0, 0))#.BLIT TE DIBUJA ALGO EN LA PANTALLA (QUE ES LO QUE DIBUJA , POSICION X, Y)
+        if nave.detectar_colision(lista_enemigos)>=0:#CUANDO CHOCAMOS SE CIERRA
+             corriendo= False #ACA CIERRA BUCLE
 
 
-        nave.dibujar(pantalla)
-        for dis in reversed(nave.lista_disparos):
-            x = dis.detectar_colision(lista_enemigos)
+        nave.dibujar(pantalla)#
+        for dis in reversed(nave.lista_disparos):#RECORREMOS DE ATRAS LA LISTA
+            x = dis.detectar_colision(lista_enemigos)#DEVUELVE EL INDICE DE LA LISTA
             if x >= 0:
-                v = lista_enemigos.pop(x)
-                v.morir()
+                v = lista_enemigos.pop(x)#SEGUN EL INDICE SACAMOS EL ELEMENTO DE LA LISTA
+                v.morir()#
                 if v.hardcore:
                     score +=5
                 else:
                     score +=1
-                enemigos_muertos.append(v)
-                nave.lista_disparos.remove(dis)
+                enemigos_muertos.append(v)#AGREGAMOS AL ENEMIGO A LA LISTA DE ENEMIGOS MUERTOS
+                nave.lista_disparos.remove(dis)#REMOVEMOS EL DISPARO
 
-        for enemigo in reversed(enemigos_muertos):
+        for enemigo in reversed(enemigos_muertos):#DIBUJAMOS LA EXPLOSION
             enemigo.dibujar(pantalla)
-            if enemigo.hora_muerte + 300 <= pygame.time.get_ticks():
+            if enemigo.hora_muerte + 300 <= pygame.time.get_ticks():#DURACION DE LA EXPLOSION
                 enemigos_muertos.remove(enemigo)
 
 
-        for enemigo in lista_enemigos:
-            if enemigo.hardcore:
-                enemigo.actualizar_destino((nave.posicion.centerx, nave.posicion.centery))
-            enemigo.movimiento_trayectoria()
+        for enemigo in lista_enemigos:#RECORREMOS LISTA DE ENEMIGOS
+            if enemigo.hardcore:#SI ES HARDCORE
+                enemigo.actualizar_destino((nave.posicion.centerx, nave.posicion.centery))#EL HARDCORE VA A LA POSICION DE LA NAVE
+            enemigo.movimiento_trayectoria()#
             enemigo.dibujar(pantalla)
 
-        if score % 20==0 and score > 0 and RESPAWN>500:
+
+        if score % 20==0 and score > 0 and RESPAWN>500 and score - ultimo_score != 0:#RESPAWN
             RESPAWN -= 500
+            ultimo_score = score
 
 
-        pygame.display.update()
 
-        reloj.tick(60)
+        pygame.display.update()#APLICAMOS TODOS LOS DIBUJOS
+
+        reloj.tick(60)#LIMITA EL PROCESAMIENTO ¡¡MUY IMPORTANTE!!!
