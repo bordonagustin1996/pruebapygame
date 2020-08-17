@@ -7,6 +7,7 @@ ANCHO, ALTO = 800, 600
 RESOLUCION = (ANCHO, ALTO)
 RESPAWN = 3000
 
+
 class Personaje:
     def __init__(self, imagen, velocidad=1, dimensiones=(80, 80), posx=randint(0,ANCHO), posy=randint(0,ALTO)):
         self.imagen = pygame.transform.scale(pygame.image.load(imagen),dimensiones)
@@ -14,8 +15,6 @@ class Personaje:
         self.posicion.centerx = posx
         self.posicion.centery = posy
         self.velocidad = velocidad
-
-
 
     def dibujar(self, pantalla):
         pantalla.blit(self.imagen, self.posicion)
@@ -48,7 +47,7 @@ class Personaje:
 
 class Nave(Personaje):
     def __init__(self):
-        super(Nave, self).__init__("Imagenes/spaceship.png", velocidad=5, posx= int(ANCHO/2),posy=ALTO)
+        super(Nave, self).__init__("Imagenes/spaceship.png", velocidad=5, posx= int(ANCHO/2),posy=int(ALTO/2))
         self.lista_disparos= []
         #self.sonido_disparo = pygame.mixer.Sound("Sonidos/disparos.mp3")
 
@@ -60,12 +59,9 @@ class Nave(Personaje):
             dis.movimiento()
             dis.dibujar(pantalla)
 
-
-
     def disparar(self):
         self.lista_disparos.append(Disparo(self.posicion.centerx,self.posicion.centery))
         #pygame.mixer.Sound.play(self.sonido_disparo)
-
 
 
 class Enemigo(Personaje):
@@ -75,7 +71,8 @@ class Enemigo(Personaje):
         else:
             imagen="Imagenes/enemy.png"
 
-        super(Enemigo, self).__init__(imagen,posy=randint(0,int(ALTO/2)))
+        # super(Enemigo, self).__init__(imagen,posy=randint(0,int(ALTO/2)))
+        super(Enemigo, self).__init__(imagen,posy=randint(0, 1920))
         self.destino = (randint(0+self.posicion.width, ANCHO-self.posicion.width), randint(0+self.posicion.height, ALTO-self.posicion.height))
         self.hardcore = hardcore
         self.esta_vivo = True
@@ -145,7 +142,9 @@ if __name__ == '__main__':
     pygame.display.set_icon(imagen)
     nave = Nave()
     lista_enemigos = [Enemigo() for _ in range(5)]
-
+    fondo_img = pygame.image.load('Imagenes/fondo.jpeg').convert()
+    fondo_x = 0
+    fondo_y = 0
 
     w_bandera = False
     d_bandera = False
@@ -188,21 +187,30 @@ if __name__ == '__main__':
             ultimo_enemigo = pygame.time.get_ticks()
             lista_enemigos.append(Enemigo(hardcore=True))
 
-        if w_bandera:
-            nave.mover_arriba()
-        if d_bandera:
-            nave.mover_derecha()
-        if s_bandera:
-            nave.mover_abajo()
-        if a_bandera:
-            nave.mover_izquierda()
+        # if w_bandera:
+        #     nave.mover_arriba()
+        # if d_bandera:
+        #     nave.mover_derecha()
+        # if s_bandera:
+        #     nave.mover_abajo()
+        # if a_bandera:
+        #     nave.mover_izquierda()
 
-        pantalla.fill((255, 255, 255))
+        pantalla.blit(fondo_img, (fondo_x, fondo_y))
+
+        if d_bandera:
+            fondo_x -= nave.velocidad
+        if a_bandera:
+            fondo_x += nave.velocidad
+        if w_bandera:
+            fondo_y += nave.velocidad
+        if s_bandera:
+            fondo_y -= nave.velocidad
+
         textsurface = myfont.render(f'Score: {score}', False, (0, 0, 0))
         pantalla.blit(textsurface,(0, 0))
         if nave.detectar_colision(lista_enemigos)>=0:
              corriendo= False
-
 
         nave.dibujar(pantalla)
         for dis in reversed(nave.lista_disparos):
@@ -222,8 +230,16 @@ if __name__ == '__main__':
             if enemigo.hora_muerte + 300 <= pygame.time.get_ticks():
                 enemigos_muertos.remove(enemigo)
 
-
+#
         for enemigo in lista_enemigos:
+            if d_bandera:
+                enemigo.posicion.centerx -= nave.velocidad
+            if a_bandera:
+                enemigo.posicion.centerx += nave.velocidad
+            if w_bandera:
+                enemigo.posicion.centery += nave.velocidad
+            if s_bandera:
+                enemigo.posicion.centery -= nave.velocidad
             if enemigo.hardcore:
                 enemigo.actualizar_destino((nave.posicion.centerx, nave.posicion.centery))
             enemigo.movimiento_trayectoria()
