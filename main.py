@@ -9,31 +9,36 @@ RESPAWN = 3000
 
 
 class Personaje:
-    def __init__(self, imagen, velocidad=1, dimensiones=(80, 80), posx=randint(0,ANCHO), posy=randint(0,ALTO)):
-        self.imagen = pygame.transform.scale(pygame.image.load(imagen),dimensiones)
-        self.posicion = self.imagen.get_rect()
+    def __init__(self, imagen, velocidad=1, direccion = "arriba", posx=randint(0,ANCHO), posy=randint(0,ALTO)):
+        self.imagen = imagen
+        self.direccion = direccion
+        self.posicion = self.imagen[self.direccion].get_rect()
         self.posicion.centerx = posx
         self.posicion.centery = posy
         self.velocidad = velocidad
 
     def dibujar(self, pantalla):
-        pantalla.blit(self.imagen, self.posicion)
+        pantalla.blit(self.imagen[self.direccion], self.posicion)
 
     def mover_arriba(self):
         if self.posicion.top > 0:
             self.posicion.centery -= self.velocidad
+            self.direccion = "arriba"
 
     def mover_derecha(self):
         if self.posicion.right < ANCHO:
-            self.posicion.centerx += self.velocidad
+           self.posicion.centerx += self.velocidad
+           self.direccion = "derecha"
 
     def mover_abajo(self):
         if self.posicion.bottom < ALTO:
             self.posicion.centery += self.velocidad
+            self.direccion = "abajo"
 
     def mover_izquierda(self):
         if self.posicion.left > 0:
             self.posicion.centerx -= self.velocidad
+            self.direccion = "izquierda"
 
     def detectar_colision(self,lista_personajes):
         c = 0
@@ -46,8 +51,15 @@ class Personaje:
 
 
 class Nave(Personaje):
-    def __init__(self):
-        super(Nave, self).__init__("Imagenes/spaceship.png", velocidad=5, posx= int(ANCHO/2),posy=int(ALTO/2))
+    def __init__(self,dimensiones=(80, 80)):
+        imagenes = {
+            "arriba": pygame.transform.scale(pygame.image.load("Imagenes/espaldadoctor.png"),dimensiones),
+            "abajo": pygame.transform.scale(pygame.image.load("Imagenes/frentedoctor.png"),dimensiones),
+            "izquierda": pygame.transform.scale(pygame.image.load("Imagenes/izqdoctor.png"),dimensiones),
+            "derecha": pygame.transform.scale(pygame.image.load("Imagenes/DERdoctor.png"),dimensiones),
+            }
+
+        super(Nave, self).__init__(imagenes, velocidad=5, posx= int(ANCHO/2),posy=int(ALTO/2))
         self.lista_disparos= []
         #self.sonido_disparo = pygame.mixer.Sound("Sonidos/disparos.mp3")
 
@@ -60,19 +72,25 @@ class Nave(Personaje):
             dis.dibujar(pantalla)
 
     def disparar(self):
-        self.lista_disparos.append(Disparo(self.posicion.centerx,self.posicion.centery))
+        self.lista_disparos.append(Disparo(self.posicion.centerx,self.posicion.centery,self.direccion))
         #pygame.mixer.Sound.play(self.sonido_disparo)
 
 
 class Enemigo(Personaje):
-    def __init__(self, hardcore = False):
+    def __init__(self,dimensiones=(80,80), hardcore = False):
         if hardcore:
             imagen="Imagenes/skull.png"
         else:
             imagen="Imagenes/enemy.png"
+        imagenes = {
+            "arriba": pygame.transform.scale(pygame.image.load(imagen), dimensiones),
+            "abajo": pygame.transform.scale(pygame.image.load(imagen), dimensiones),
+            "izquierda": pygame.transform.scale(pygame.image.load(imagen), dimensiones),
+            "derecha": pygame.transform.scale(pygame.image.load(imagen), dimensiones),
+        }
 
         # super(Enemigo, self).__init__(imagen,posy=randint(0,int(ALTO/2)))
-        super(Enemigo, self).__init__(imagen,posy=randint(0, 1920))
+        super(Enemigo, self).__init__(imagenes,posy=randint(0, 1920))
         self.destino = (randint(0+self.posicion.width, ANCHO-self.posicion.width), randint(0+self.posicion.height, ALTO-self.posicion.height))
         self.hardcore = hardcore
         self.esta_vivo = True
@@ -119,13 +137,26 @@ class Enemigo(Personaje):
 
 
 class Disparo(Personaje):
-    def __init__(self, posx, posy):
-        super(Disparo, self).__init__("Imagenes/bullet.png",dimensiones=(20, 20),velocidad=8)
+    def __init__(self, posx, posy,direccion,dimensiones=(20,20)):
+        imagenes = {
+            "arriba": pygame.transform.scale(pygame.image.load("Imagenes/bullet.png"), dimensiones),
+            "abajo": pygame.transform.scale(pygame.image.load("Imagenes/bullet.png"), dimensiones),
+            "izquierda": pygame.transform.scale(pygame.image.load("Imagenes/bullet.png"), dimensiones),
+            "derecha": pygame.transform.scale(pygame.image.load("Imagenes/bullet.png"), dimensiones),
+        }
+        super(Disparo, self).__init__(imagenes,direccion=direccion,velocidad=8)
         self.posicion.centerx = posx
         self.posicion.centery = posy
 
     def movimiento(self):
-        self.mover_arriba()
+        if self.direccion == "arriba":
+            self.mover_arriba()
+        if self.direccion == "abajo":
+            self.mover_abajo()
+        if self.direccion == "izquierda":
+            self.mover_izquierda()
+        if self.direccion == "derecha":
+            self.mover_derecha()
 
 
 if __name__ == '__main__':
@@ -142,9 +173,13 @@ if __name__ == '__main__':
     pygame.display.set_icon(imagen)
     nave = Nave()
     lista_enemigos = [Enemigo() for _ in range(5)]
+    #lista_enemigos = []
     fondo_img = pygame.image.load('Imagenes/fondo.jpeg').convert()
     fondo_x = 0
     fondo_y = 0
+    ancho_img = fondo_img.get_width()
+    alto_img = fondo_img.get_height()
+
 
     w_bandera = False
     d_bandera = False
@@ -198,13 +233,17 @@ if __name__ == '__main__':
 
         pantalla.blit(fondo_img, (fondo_x, fondo_y))
 
-        if d_bandera:
+        if d_bandera and fondo_x+ancho_img >= ANCHO:
             fondo_x -= nave.velocidad
-        if a_bandera:
+            nave.direccion = "derecha"
+        if a_bandera and fondo_x <= 0:
             fondo_x += nave.velocidad
-        if w_bandera:
+            nave.direccion = "izquierda"
+        if w_bandera and fondo_y <= 0:
             fondo_y += nave.velocidad
-        if s_bandera:
+            nave.direccion = "arriba"
+        if s_bandera and fondo_y+alto_img >= ALTO:
+            nave.direccion = "abajo"
             fondo_y -= nave.velocidad
 
         textsurface = myfont.render(f'Score: {score}', False, (0, 0, 0))
